@@ -3,6 +3,7 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import *
 import os
+import re
 import configparser
 from dotenv import load_dotenv
 
@@ -26,6 +27,12 @@ from poi import TravelPOITool
 from ticket import TravelTicketTool
 from weather import WeatherDataTool
 from product import ProductTool
+#from rag import RAG
+import openai
+from langchain import hub
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain_community.tools.tavily_search import TavilySearchResults
+
 
 app = Flask(__name__)
 
@@ -60,8 +67,30 @@ async def callback():
 @handler.add(MessageEvent)
 def handle_message(event):
     message = event.message.text
-    tool_result = open_ai_agent.run(message)
-    line_bot_api.reply_message(event.reply_token,TextSendMessage(tool_result)) 
+    if re.match("提示",message):
+        remessage = "預設使用繁體中文回答\n太久未啟動需先喚醒。\n用'@問題'可用最基礎的RAG回答\n其他有股票、天氣、旅遊、購物等\n\nThank you  :)"
+        line_bot_api.reply_message(event.reply_token,TextSendMessage(remessage)) 
+    elif '@' in message:
+        openai.api_key = os.environ["OPENAI_API_KEY"]
+        prompt = hub.pull("hwchase17/react")
+        llm = ChatOpenAI(model="gpt-3.5-turbo")
+        tools = [TavilySearchResults(max_results=2)]
+        agent = create_react_agent(llm, tools, prompt)
+        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+        user_input = input("Enter your question: ")
+        response = agent_executor.invoke({"input": user_input + "，#zh-TW"})
+        user_input1 = response['output'] + " 將任何輸入翻譯成繁體中文"
+        response1 = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": user_input1}
+            ]
+        )
+        line_bot_api.reply_message(event.reply_token,TextSendMessage(response1['choices'][0]['message']['content']))
+    else:
+        tool_result = open_ai_agent.run(message)
+        line_bot_api.reply_message(event.reply_token,TextSendMessage(tool_result)) 
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
