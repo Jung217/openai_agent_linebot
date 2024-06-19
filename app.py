@@ -41,11 +41,12 @@ open_ai_agent = initialize_agent(tools, model, agent=AgentType.OPENAI_FUNCTIONS,
 async def callback():
     signature = request.headers['X-Line-Signature']
 
-    body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
-    print(body)
+    bodyT = request.get_data(as_text=True)
+    body = request.get_data()
+    app.logger.info("Request body: " + bodyT)
+
     try:
-        handler.handle(body, signature)
+        handler.handle(bodyT, signature)
         tool_result = open_ai_agent.run(body.message.text)
         await line_bot_api.reply_message( body.reply_token, TextSendMessage(text=tool_result))
     except InvalidSignatureError:
