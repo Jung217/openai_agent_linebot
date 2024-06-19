@@ -2,12 +2,9 @@ from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import *
-import re
 import os
 import configparser
-from groq import Groq
 from dotenv import load_dotenv
-import aiohttp
 
 
 from langchain.chat_models import ChatOpenAI
