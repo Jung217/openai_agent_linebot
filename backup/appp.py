@@ -1,12 +1,4 @@
-from flask import Flask, request, abort
-from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import *
-import re
 import os
-import configparser
-from groq import Groq
-from dotenv import load_dotenv
 import aiohttp
 
 
@@ -29,17 +21,17 @@ from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
 )
 
-app = Flask(__name__)
-
-config = configparser.ConfigParser()
-config.read('config.ini')
+from dotenv import load_dotenv
 load_dotenv()
 
-line_bot_api = LineBotApi(os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None))
-handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET', None))
-parser = WebhookParser(handler)
+channel_secret = os.getenv('LINE_CHANNEL_SECRET', None)
+channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None)
 
-line_bot_api.push_message(os.getenv('DEV_UID', None), TextSendMessage(text='You can start !'))
+app = FastAPI()
+session = aiohttp.ClientSession()
+async_http_client = AiohttpAsyncHttpClient(session)
+line_bot_api = AsyncLineBotApi(channel_access_token, async_http_client)
+parser = WebhookParser(channel_secret)
 
 model = ChatOpenAI(model="gpt-3.5-turbo-0613")
 tools = [StockPriceTool(), StockPercentageChangeTool(),
@@ -49,10 +41,9 @@ open_ai_agent = initialize_agent(tools,
                                  agent=AgentType.OPENAI_FUNCTIONS,
                                  verbose=False)
 
-@app.route("/callback", methods=['POST'])
-async def callback():
-    signature = request.headers['X-Line-Signature']
 
+@app.post("/callback")
+async def handle_callback(request: Request):
     signature = request.headers['X-Line-Signature']
 
     body = await request.body()
@@ -61,7 +52,7 @@ async def callback():
     try:
         events = parser.parse(body, signature)
     except InvalidSignatureError:
-        abort(400)
+        raise HTTPException(status_code=400, detail="Invalid signature")
 
     for event in events:
         if not isinstance(event, MessageEvent):
@@ -75,9 +66,5 @@ async def callback():
             event.reply_token,
             TextSendMessage(text=tool_result)
         )
- 
-    return 'OK'
 
-if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    return 'OK'
