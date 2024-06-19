@@ -31,7 +31,8 @@ from product import ProductTool
 import openai
 from langchain import hub
 from langchain.agents import AgentExecutor
-from langchain.agents import create_react_agent
+#from langchain.agents import create_react_agent
+from langchain.agents.react.agent import create_react_agent
 from langchain_community.tools.tavily_search import TavilySearchResults
 
 
