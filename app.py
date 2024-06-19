@@ -30,7 +30,8 @@ from product import ProductTool
 #from rag import RAG
 import openai
 from langchain import hub
-from langchain.agents import AgentExecutor, create_react_agent
+from langchain.agents import AgentExecutor
+from langchain.agents import create_react_agent
 from langchain_community.tools.tavily_search import TavilySearchResults
 
 
