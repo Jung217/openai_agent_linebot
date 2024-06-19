@@ -32,8 +32,13 @@ handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET', None))
 
 line_bot_api.push_message(os.getenv('DEV_UID', None), TextSendMessage(text='You can start !'))
 
+model = ChatOpenAI(model="gpt-3.5-turbo-0613")
+tools = [StockPriceTool(), StockPercentageChangeTool(),
+         StockGetBestPerformingTool()]
+open_ai_agent = initialize_agent(tools, model, agent=AgentType.OPENAI_FUNCTIONS, verbose=False)
+
 @app.route("/callback", methods=['POST'])
-def callback():
+async def callback():
     signature = request.headers['X-Line-Signature']
 
     body = request.get_data(as_text=True)
@@ -43,20 +48,15 @@ def callback():
         handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
+    tool_result = open_ai_agent.run(body.message.text)
+    await line_bot_api.reply_message( body.reply_token, TextSendMessage(text=tool_result))
  
     return 'OK'
 
-Lmodel = os.getenv('MMODEL', None)
-
-model = ChatOpenAI(model="gpt-3.5-turbo-0613")
-tools = [StockPriceTool(), StockPercentageChangeTool(),
-         StockGetBestPerformingTool()]
-open_ai_agent = initialize_agent(tools, model, agent=AgentType.OPENAI_FUNCTIONS, verbose=False)
-
-@handler.add(MessageEvent)
-async def handle_message(event):
-    tool_result = open_ai_agent.run(event.message.text)
-    await line_bot_api.reply_message( event.reply_token, TextSendMessage(text=tool_result))
+#@handler.add(MessageEvent)
+#async def handle_message(event):
+#    tool_result = open_ai_agent.run(event.message.text)
+#    await line_bot_api.reply_message( event.reply_token, TextSendMessage(text=tool_result))
     
 
 if __name__ == "__main__":
