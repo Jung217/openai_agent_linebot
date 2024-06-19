@@ -32,9 +32,8 @@ handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET', None))
 
 line_bot_api.push_message(os.getenv('DEV_UID', None), TextSendMessage(text='You can start !'))
 
-model = ChatOpenAI(model="gpt-3.5-turbo-0613")
-tools = [StockPriceTool(), StockPercentageChangeTool(),
-         StockGetBestPerformingTool()]
+model = ChatOpenAI(model="gpt-3.5-turbo")
+tools = [StockPriceTool(), StockPercentageChangeTool(), StockGetBestPerformingTool()]
 open_ai_agent = initialize_agent(tools, model, agent=AgentType.OPENAI_FUNCTIONS, verbose=False)
 
 @app.route("/callback", methods=['POST'])
@@ -50,10 +49,6 @@ async def callback():
     except InvalidSignatureError:
         abort(400)
     return 'OK'
-
-model = ChatOpenAI(model="gpt-3.5-turbo")
-tools = [StockPriceTool(), StockPercentageChangeTool(), StockGetBestPerformingTool()]
-open_ai_agent = initialize_agent(tools, model, agent=AgentType.OPENAI_FUNCTIONS, verbose=False)
 
 @handler.add(MessageEvent)
 def handle_message(event):
