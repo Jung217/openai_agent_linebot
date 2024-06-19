@@ -38,7 +38,7 @@ tools = [StockPriceTool(), StockPercentageChangeTool(),
 open_ai_agent = initialize_agent(tools, model, agent=AgentType.OPENAI_FUNCTIONS, verbose=False)
 
 @app.route("/callback", methods=['POST'])
-async def callback():
+async def callback(event):
     signature = request.headers['X-Line-Signature']
 
     bodyT = request.get_data(as_text=True)
@@ -47,17 +47,12 @@ async def callback():
 
     try:
         handler.handle(bodyT, signature)
+        tool_result = open_ai_agent.run(body.message.text)
+        await line_bot_api.reply_message( body.reply_token, TextSendMessage(text=tool_result))
     except InvalidSignatureError:
         abort(400)
+        
     return 'OK'
-
-@handler.add(MessageEvent)
-def handle_message(event):
-    message = event.message.text
-
-    line_bot_api.reply_message(event.reply_token,TextSendMessage(":)"))   
-    #tool_result = open_ai_agent.run(body.message.text)
-    #await line_bot_api.reply_message( body.reply_token, TextSendMessage(text=tool_result))
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
