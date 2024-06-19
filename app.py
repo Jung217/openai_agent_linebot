@@ -29,6 +29,7 @@ load_dotenv()
 
 line_bot_api = LineBotApi(os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None))
 handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET', None))
+parser = WebhookParser(handler)
 
 line_bot_api.push_message(os.getenv('DEV_UID', None), TextSendMessage(text='You can start !'))
 
@@ -41,15 +42,32 @@ open_ai_agent = initialize_agent(tools, model, agent=AgentType.OPENAI_FUNCTIONS,
 async def callback():
     signature = request.headers['X-Line-Signature']
 
+    body = await request.body()
+    body = request.get_data(as_text=True)
+    body = body.decode()
+
+    try:
+        events = parser.parse(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+
+    for event in events:
+        if not isinstance(event, MessageEvent):
+            continue
+        if not isinstance(event.message, TextMessage):
+            continue
     body = request.get_data(as_text=True)
     app.logger.info("Request body: " + body)
  
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        abort(400)
-    tool_result = open_ai_agent.run(body.message.text)
-    await line_bot_api.reply_message( body.reply_token, TextSendMessage(text=tool_result))
+    #try:
+    #    handler.handle(body, signature)
+    #    tool_result = open_ai_agent.run(body.message.text)
+    #    await line_bot_api.reply_message( body.reply_token, TextSendMessage(text=tool_result))
+    #except InvalidSignatureError:
+    #    abort(400)
+        
+    #tool_result = open_ai_agent.run(body.message.text)
+    #await line_bot_api.reply_message( body.reply_token, TextSendMessage(text=tool_result))
  
     return 'OK'
 
