@@ -51,13 +51,15 @@ async def callback():
         abort(400)
     return 'OK'
 
+model = ChatOpenAI(model="gpt-3.5-turbo")
+tools = [StockPriceTool(), StockPercentageChangeTool(), StockGetBestPerformingTool()]
+open_ai_agent = initialize_agent(tools, model, agent=AgentType.OPENAI_FUNCTIONS, verbose=False)
+
 @handler.add(MessageEvent)
 def handle_message(event):
     message = event.message.text
-
-    line_bot_api.reply_message(event.reply_token,TextSendMessage(":)"))   
-    #tool_result = open_ai_agent.run(body.message.text)
-    #await line_bot_api.reply_message( body.reply_token, TextSendMessage(text=tool_result))
+    tool_result = open_ai_agent.run(message)
+    line_bot_api.reply_message(event.reply_token,TextSendMessage(tool_result)) 
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
