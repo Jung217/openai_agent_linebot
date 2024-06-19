@@ -1,0 +1,26 @@
+# Exported from Render on 2024-06-19T23:52:23Z
+services:
+- type: web
+  name: openai_agent_linebot
+  runtime: python
+  repo: https://github.com/Jung217/openai_agent_linebot
+  plan: free
+  envVars:
+  - key: TAVILY_API_KEY
+    sync: false
+  - key: OPENAI_API_KEY
+    sync: false
+  - key: LINE_CHANNEL_SECRET
+    sync: false
+  - key: LINE_CHANNEL_ACCESS_TOKEN
+    sync: false
+  - key: DEV_UID
+    sync: false
+  - key: CWB_TOKEN
+    sync: false
+  region: singapore
+  buildCommand: pip install -r requirements.txt
+  startCommand: export PATH=$PATH:/usr/local/python3/bin && pip install gunicorn &&
+    gunicorn app:app
+  autoDeploy: false
+version: "1"
