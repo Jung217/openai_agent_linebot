@@ -7,8 +7,6 @@ yfinance
 pydantic
 tiktoken
 flask==2.2.5
-numpy==1.23.4
-scipy==1.9.3
 lxml==4.9.1
 matplotlib
 gspread==5.7.2

@@ -6,12 +6,6 @@ import os
 import configparser
 from dotenv import load_dotenv
 
-from linebot.exceptions import (
-    InvalidSignatureError
-)
-from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage,
-)
 
 from langchain.chat_models import ChatOpenAI
 from langchain.agents import AgentType
@@ -21,6 +15,16 @@ from stock_price import StockPriceTool
 from stock_peformace import StockPercentageChangeTool
 from stock_peformace import StockGetBestPerformingTool
 
+from linebot import (
+    AsyncLineBotApi, WebhookParser
+)
+from linebot.exceptions import (
+    InvalidSignatureError
+)
+from linebot.models import (
+    MessageEvent, TextMessage, TextSendMessage,
+)
+
 app = Flask(__name__)
 
 config = configparser.ConfigParser()
@@ -29,36 +33,45 @@ load_dotenv()
 
 line_bot_api = LineBotApi(os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None))
 handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET', None))
+#parser = WebhookParser(handler)
 
 line_bot_api.push_message(os.getenv('DEV_UID', None), TextSendMessage(text='You can start !'))
-
-@app.route("/callback", methods=['POST'])
-def callback():
-    signature = request.headers['X-Line-Signature']
-
-    body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
- 
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        abort(400)
- 
-    return 'OK'
-
-Lmodel = os.getenv('MMODEL', None)
 
 model = ChatOpenAI(model="gpt-3.5-turbo-0613")
 tools = [StockPriceTool(), StockPercentageChangeTool(),
          StockGetBestPerformingTool()]
-open_ai_agent = initialize_agent(tools, model, agent=AgentType.OPENAI_FUNCTIONS, verbose=False)
+open_ai_agent = initialize_agent(tools,
+                                 model,
+                                 agent=AgentType.OPENAI_FUNCTIONS,
+                                 verbose=False)
 
-@handler.add(MessageEvent)
-def handle_message(event):
-    message = event.message.text
-    tool_result = open_ai_agent.run(event.message.text)
-    line_bot_api.reply_message( event.reply_token, TextSendMessage(text=tool_result))
-    
+@app.route("/callback", methods=['POST'])
+async def callback():
+    signature = request.headers['X-Line-Signature']
+
+    body = await request.body()
+    body = request.get_data(as_text=True)
+    body = body.decode()
+
+    try:
+        events = parser.parse(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+
+    for event in events:
+        if not isinstance(event, MessageEvent):
+            continue
+        if not isinstance(event.message, TextMessage):
+            continue
+
+        tool_result = open_ai_agent.run(event.message.text)
+
+        await line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=tool_result)
+        )
+ 
+    return 'OK'
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
