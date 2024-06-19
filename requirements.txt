@@ -1,7 +1,7 @@
 line-bot-sdk==3.5.0
 fastapi
 uvicorn[standard]
-langchain==0.0.308
+langchain==0.2.5
 langchain[all]
 openai==0.28.1
 yfinance
