@@ -18,3 +18,4 @@ arrow
 python-dotenv==0.21.0
 duckduckgo-search
 langchain_community
+langchainhub
