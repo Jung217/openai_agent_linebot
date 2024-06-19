@@ -79,8 +79,8 @@ def handle_message(event):
         tools = [TavilySearchResults(max_results=2)]
         agent = create_react_agent(llm, tools, prompt)
         agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-        user_input = input("Enter your question: ")
-        response = agent_executor.invoke({"input": user_input + "，#zh-TW"})
+
+        response = agent_executor.invoke({"input": message})
         user_input1 = response['output'] + " 將任何輸入翻譯成繁體中文"
         response1 = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
