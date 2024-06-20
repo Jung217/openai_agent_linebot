@@ -1,5 +1,6 @@
 # openai_agent_linebot
 A Line Bot with Open AI API and agent
+ : [line.me/R/ti/p/@811saehr](https://line.me/R/ti/p/@811saehr)
 
 [![Deploy to Render](http://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 # Function
