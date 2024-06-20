@@ -1,6 +1,7 @@
 # openai_agent_linebot
 A Line Bot with Open AI API and agent
 
+[![Deploy to Render](http://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 # Function
 * 提示
 <img src="img/297971.jpg" width=50% height=50%>
