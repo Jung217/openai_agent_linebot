@@ -74,6 +74,7 @@ def handle_message(event):
             remessage = "預設使用繁體中文回答\n太久未啟動需先喚醒。\n用'@問題'可用最基礎的RAG回答\n其他有股票、天氣、旅遊、購物等\n\nThank you  :)"
             line_bot_api.reply_message(event.reply_token,TextSendMessage(remessage)) 
         elif '@' in message:
+            imessage = message.replace('@', '')
             openai.api_key = os.environ["OPENAI_API_KEY"]
             prompt = hub.pull("hwchase17/react")
             llm = ChatOpenAI(model="gpt-3.5-turbo")
@@ -81,7 +82,7 @@ def handle_message(event):
             agent = create_react_agent(llm, tools, prompt)
             agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-            response = agent_executor.invoke({"input": message})
+            response = agent_executor.invoke({"input": imessage})
             user_input1 = response['output'] + " 將任何輸入翻譯成繁體中文"
             response1 = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
@@ -92,7 +93,7 @@ def handle_message(event):
             )
             line_bot_api.reply_message(event.reply_token,TextSendMessage(response1['choices'][0]['message']['content']))
         else:
-            tool_result = open_ai_agent.run(message)
+            tool_result = open_ai_agent.run(message + " #zh-TW")
             line_bot_api.reply_message(event.reply_token,TextSendMessage(tool_result)) 
     except: line_bot_api.reply_message(event.reply_token,TextSendMessage("你遇上了錯誤\n就像詩人遇見了雲\n美麗的難得!"))
 
